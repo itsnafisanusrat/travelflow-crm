@@ -1,0 +1,789 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS
+enum UserRole {
+  SUPER_ADMIN
+  AGENCY_OWNER
+  SALES_MANAGER
+  TRAVEL_CONSULTANT
+  OPERATIONS_MANAGER
+  FINANCE_USER
+  SUPPLIER_USER
+  READ_ONLY
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONSULTATION_SCHEDULED
+  QUOTATION_SENT
+  NEGOTIATION
+  WON
+  LOST
+  NURTURE
+}
+
+enum LeadSource {
+  WEBSITE
+  EMAIL
+  PHONE
+  WHATSAPP
+  SOCIAL_MEDIA
+  REFERRAL
+  WALK_IN
+  PARTNER
+  OTHER
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  REVISED
+}
+
+enum BookingStatus {
+  PENDING
+  ON_HOLD
+  PARTIALLY_CONFIRMED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TravelerType {
+  INDIVIDUAL
+  COUPLE
+  FAMILY
+  GROUP
+  CORPORATE
+}
+
+enum CurrencyCode {
+  USD
+  EUR
+  GBP
+  INR
+  AUD
+  CAD
+  SGD
+  AED
+}
+
+// MODELS
+
+// Organization - Multi-tenancy base
+model Organization {
+  id                String   @id @default(uuid())
+  name              String
+  slug              String   @unique
+  logo              String?
+  website           String?
+  email             String?
+  phone             String?
+  address           String?
+  city              String?
+  country           String?
+  timezone          String   @default("UTC")
+  currency          CurrencyCode @default(USD)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  users             User[]
+  leads             Lead[]
+  customers         Customer[]
+  travelers         Traveler[]
+  quotations        Quotation[]
+  itineraries       Itinerary[]
+  bookings          Booking[]
+  suppliers         Supplier[]
+  invoices          Invoice[]
+  tasks             Task[]
+  activities        Activity[]
+  communications    Communication[]
+  documents         Document[]
+  auditLogs         AuditLog[]
+}
+
+// Users and Authentication
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  password          String   // hashed
+  firstName         String
+  lastName          String
+  avatar            String?
+  phone             String?
+  role              UserRole
+  organizationId    String
+  isActive          Boolean  @default(true)
+  lastLogin         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  leadsAssigned     Lead[] @relation("AssignedConsultant")
+  leadsCreated      Lead[] @relation("CreatedBy")
+  quotationsCreated Quotation[] @relation("CreatedBy")
+  bookingsAssigned  Booking[] @relation("OperationsManager")
+  tasksAssigned     Task[] @relation("AssignedUser")
+  activitiesLogged  Activity[] @relation("CreatedBy")
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+// Customers (Companies or Individual Account Holders)
+model Customer {
+  id                String   @id @default(uuid())
+  organizationId    String
+  name              String
+  email             String?
+  phone             String?
+  website           String?
+  type              String   @default("individual") // individual or company
+  address           String?
+  city              String?
+  country           String?
+  taxId             String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  travelers         Traveler[]
+  leads             Lead[]
+  quotations        Quotation[]
+  bookings          Booking[]
+  invoices          Invoice[]
+  communications    Communication[]
+  documents         Document[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+}
+
+// Travelers (Individual Persons)
+model Traveler {
+  id                String   @id @default(uuid())
+  organizationId    String
+  customerId        String?
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  dateOfBirth       DateTime?
+  passport          String?
+  passportExpiry    DateTime?
+  visa              String?
+  visaExpiry        DateTime?
+  nationality       String?
+  dietaryNeeds      String?
+  accessibilityNeeds String?
+  emergencyContact  String?
+  emergencyPhone    String?
+  preferences       Json? // JSON preferences, past destinations, etc.
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  leads             Lead[]
+  bookings          Booking[]
+  documents         Document[]
+
+  @@index([organizationId])
+  @@index([customerId])
+}
+
+// Leads and Enquiries
+model Lead {
+  id                String   @id @default(uuid())
+  organizationId    String
+  customerId        String?
+  travelerId        String?
+  createdById       String
+  assignedConsultantId String?
+  referenceNumber   String   @unique @default(uuid())
+  
+  // Lead Info
+  destination       String?
+  travelDates       String?
+  duration          Int?
+  numTravelers      Int?
+  travelerType      TravelerType?
+  budget            Float?
+  tripPurpose       String?
+  leadSource        LeadSource?
+  status            LeadStatus @default(NEW)
+  priority          String    @default("medium") // high, medium, low
+  score             Int       @default(0)
+  tags              String[]  @default([])
+  notes             String?
+  
+  // Consent
+  consentEmail      Boolean   @default(false)
+  consentPhone      Boolean   @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  traveler          Traveler? @relation(fields: [travelerId], references: [id], onDelete: SetNull)
+  createdBy         User @relation("CreatedBy", fields: [createdById], references: [id])
+  assignedConsultant User? @relation("AssignedConsultant", fields: [assignedConsultantId], references: [id], onDelete: SetNull)
+  quotations        Quotation[]
+  activities        Activity[]
+  communications    Communication[]
+  documents         Document[]
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([travelerId])
+  @@index([status])
+  @@index([assignedConsultantId])
+}
+
+// Quotations / Proposals
+model Quotation {
+  id                String   @id @default(uuid())
+  organizationId    String
+  leadId            String?
+  customerId        String?
+  createdById       String
+  referenceNumber   String   @unique @default(uuid())
+  
+  // Quotation Details
+  title             String
+  status            QuotationStatus @default(DRAFT)
+  destinationName   String?
+  startDate         DateTime?
+  endDate           DateTime?
+  duration          Int?
+  numTravelers      Int?
+  
+  // Pricing
+  currency          CurrencyCode
+  subtotal          Float   @default(0)
+  taxAmount         Float   @default(0)
+  discountAmount    Float   @default(0)
+  totalPrice        Float   @default(0)
+  perPersonPrice    Float   @default(0)
+  depositAmount     Float   @default(0)
+  balanceDue        Float   @default(0)
+  
+  // Markup and Commission
+  costPrice         Float   @default(0)
+  margin            Float   @default(0)
+  marginPercent     Float   @default(0)
+  commissionAmount  Float   @default(0)
+  
+  // Status Tracking
+  viewedAt          DateTime?
+  acceptedAt        DateTime?
+  rejectedAt        DateTime?
+  expiresAt         DateTime?
+  
+  notes             String?
+  terms             String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead              Lead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy         User @relation("CreatedBy", fields: [createdById], references: [id])
+  items             QuotationItem[]
+  itineraries       Itinerary[]
+  bookings          Booking[]
+  activities        Activity[]
+
+  @@index([organizationId])
+  @@index([leadId])
+  @@index([customerId])
+  @@index([status])
+}
+
+// Quotation Line Items
+model QuotationItem {
+  id                String   @id @default(uuid())
+  quotationId       String
+  sequenceNumber    Int
+  
+  description       String
+  category          String   // Accommodation, Flight, Transfer, Tour, Activity, Insurance, etc.
+  quantity          Int      @default(1)
+  unitPrice         Float
+  subtotal          Float
+  includeInPrice    Boolean  @default(true)
+  notes             String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  quotation         Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+}
+
+// Itineraries
+model Itinerary {
+  id                String   @id @default(uuid())
+  organizationId    String
+  quotationId       String?
+  customerId        String?
+  title             String
+  description       String?
+  
+  destination       String
+  startDate         DateTime
+  endDate           DateTime
+  duration          Int
+  numTravelers      Int
+  
+  status            String   @default("draft") // draft, final, cancelled
+  visibility        String   @default("private") // private, shared, public
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  quotation         Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  days              ItineraryDay[]
+  activities        Activity[]
+  documents         Document[]
+
+  @@index([organizationId])
+  @@index([quotationId])
+  @@index([customerId])
+}
+
+// Itinerary Days
+model ItineraryDay {
+  id                String   @id @default(uuid())
+  itineraryId       String
+  dayNumber         Int
+  
+  date              DateTime
+  title             String?
+  destination       String?
+  description       String?
+  
+  // Activities for the day
+  accommodation     String?
+  accommodationDetails String?
+  transport         String?
+  transportDetails  String?
+  meals             String?
+  activities        String?
+  
+  notes             String?
+  images            String[]  @default([])
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  itinerary         Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@index([itineraryId])
+}
+
+// Bookings
+model Booking {
+  id                String   @id @default(uuid())
+  organizationId    String
+  quotationId       String?
+  customerId        String?
+  operationsManagerId String?
+  
+  referenceNumber   String   @unique @default(uuid())
+  
+  // Trip Details
+  destination       String
+  startDate         DateTime
+  endDate           DateTime
+  duration          Int
+  numTravelers      Int
+  
+  // Booking Status
+  status            BookingStatus @default(PENDING)
+  paymentStatus     PaymentStatus @default(DRAFT)
+  
+  // Pricing
+  currency          CurrencyCode
+  totalPrice        Float
+  costPrice         Float
+  margin            Float
+  
+  // Payment
+  depositAmount     Float   @default(0)
+  balanceDue        Float   @default(0)
+  paidAmount        Float   @default(0)
+  dueDate           DateTime?
+  
+  // Internal
+  notes             String?
+  confirmationSent  Boolean @default(false)
+  confirmationSentAt DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  quotation         Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  operationsManager User? @relation("OperationsManager", fields: [operationsManagerId], references: [id], onDelete: SetNull)
+  services          BookingService[]
+  itineraries       Itinerary[]
+  invoices          Invoice[]
+  travelers         Traveler[]
+  activities        Activity[]
+  communications    Communication[]
+  documents         Document[]
+  tasks             Task[]
+
+  @@index([organizationId])
+  @@index([quotationId])
+  @@index([customerId])
+  @@index([status])
+}
+
+// Booking Services (confirmed services)
+model BookingService {
+  id                String   @id @default(uuid())
+  bookingId         String
+  
+  description       String
+  supplierId        String?
+  supplierReference String?
+  
+  category          String   // Accommodation, Flight, Transfer, etc.
+  serviceDate       DateTime?
+  
+  costPrice         Float
+  sellingPrice      Float
+  
+  status            String   @default("pending") // pending, confirmed, completed, cancelled
+  notes             String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  booking           Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+// Suppliers
+model Supplier {
+  id                String   @id @default(uuid())
+  organizationId    String
+  
+  name              String
+  type              String   // Hotel, Airline, Transport, Guide, Activity, Insurance, Visa
+  email             String?
+  phone             String?
+  website           String?
+  address           String?
+  contactPerson     String?
+  
+  rating            Int? // 1-5 stars
+  commission        Float? // Commission percentage
+  paymentTerms      String?
+  
+  notes             String?
+  isActive          Boolean @default(true)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  services          BookingService[]
+  communications    Communication[]
+
+  @@index([organizationId])
+  @@index([type])
+}
+
+// Invoices
+model Invoice {
+  id                String   @id @default(uuid())
+  organizationId    String
+  bookingId         String?
+  customerId        String?
+  
+  invoiceNumber     String   @unique
+  
+  // Invoice Details
+  issueDate         DateTime @default(now())
+  dueDate           DateTime
+  
+  // Amounts
+  currency          CurrencyCode
+  subtotal          Float
+  taxAmount         Float   @default(0)
+  discountAmount    Float   @default(0)
+  totalAmount       Float
+  
+  // Payment Tracking
+  status            PaymentStatus @default(DRAFT)
+  paidAmount        Float   @default(0)
+  balanceDue        Float
+  
+  // Notes
+  notes             String?
+  terms             String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  payments          Payment[]
+  activities        Activity[]
+
+  @@index([organizationId])
+  @@index([bookingId])
+  @@index([customerId])
+  @@index([status])
+}
+
+// Payments
+model Payment {
+  id                String   @id @default(uuid())
+  invoiceId         String
+  
+  reference         String?
+  method            String   // credit_card, bank_transfer, check, cash, other
+  amount            Float
+  
+  transactionRef    String?
+  notes             String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  invoice           Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+// Tasks
+model Task {
+  id                String   @id @default(uuid())
+  organizationId    String
+  bookingId         String?
+  
+  title             String
+  description       String?
+  
+  status            TaskStatus @default(TODO)
+  priority          String @default("medium") // high, medium, low
+  dueDate           DateTime?
+  
+  assignedUserId    String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  assignedUser      User? @relation("AssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([bookingId])
+  @@index([status])
+}
+
+// Activities (Audit Trail / History)
+model Activity {
+  id                String   @id @default(uuid())
+  organizationId    String
+  
+  entity            String   // Lead, Quotation, Booking, etc.
+  entityId          String
+  action            String   // created, updated, viewed, sent, accepted, etc.
+  
+  changes           Json?    // What changed
+  description       String?
+  
+  leadId            String?
+  quotationId       String?
+  bookingId         String?
+  invoiceId         String?
+  itineraryId       String?
+  
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead              Lead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  quotation         Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  invoice           Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  itinerary         Itinerary? @relation(fields: [itineraryId], references: [id], onDelete: SetNull)
+  createdBy         User @relation("CreatedBy", fields: [createdById], references: [id])
+
+  @@index([organizationId])
+  @@index([entity])
+  @@index([leadId])
+  @@index([quotationId])
+  @@index([bookingId])
+}
+
+// Communications
+model Communication {
+  id                String   @id @default(uuid())
+  organizationId    String
+  
+  type              String   // email, whatsapp, sms, phone, note, message
+  subject           String?
+  content           String
+  
+  senderId          String?
+  senderType        String   // user, system, supplier
+  
+  leadId            String?
+  customerId        String?
+  bookingId         String?
+  supplierId        String?
+  
+  sentAt            DateTime?
+  readAt            DateTime?
+  
+  attachment        String?
+  externalId        String?  // Reference to external system
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead              Lead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  supplier          Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([leadId])
+  @@index([customerId])
+  @@index([bookingId])
+}
+
+// Documents
+model Document {
+  id                String   @id @default(uuid())
+  organizationId    String
+  
+  name              String
+  type              String   // passport, visa, invoice, quotation, itinerary, contract, etc.
+  url               String
+  fileSize          Int?
+  mimeType          String?
+  
+  leadId            String?
+  customerId        String?
+  travelerId        String?
+  bookingId         String?
+  itineraryId       String?
+  
+  expiryDate        DateTime?
+  isRequired        Boolean @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead              Lead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  traveler          Traveler? @relation(fields: [travelerId], references: [id], onDelete: SetNull)
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  itinerary         Itinerary? @relation(fields: [itineraryId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([leadId])
+  @@index([customerId])
+  @@index([travelerId])
+  @@index([bookingId])
+  @@index([expiryDate])
+}
+
+// Audit Logs
+model AuditLog {
+  id                String   @id @default(uuid())
+  organizationId    String
+  
+  userId            String?
+  action            String
+  resource          String
+  resourceId        String
+  
+  changes           Json?
+  ipAddress         String?
+  userAgent         String?
+
+  createdAt         DateTime @default(now())
+
+  // Relations
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+}
