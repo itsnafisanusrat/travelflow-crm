@@ -73,6 +73,14 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   );
 };
 
-export const CardContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <div className="pt-4">{children}</div>;
+export const CardContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  children,
+  className,
+  ...props
+}) => {
+  return (
+    <div className={classNames('pt-4', className)} {...props}>
+      {children}
+    </div>
+  );
 };

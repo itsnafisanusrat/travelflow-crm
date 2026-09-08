@@ -86,8 +86,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className }) =
     // Task statuses
     TODO: { variant: 'muted', label: 'To Do' },
     IN_PROGRESS: { variant: 'primary', label: 'In Progress' },
-    COMPLETED: { variant: 'success', label: 'Completed' },
-    CANCELLED: { variant: 'muted', label: 'Cancelled' },
   };
 
   const config = statusConfig[status] || { variant: 'muted' as const, label: status };
