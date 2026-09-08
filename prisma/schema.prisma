@@ -102,6 +102,21 @@ enum CurrencyCode {
   AED
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  LEAVE
+  WORK_FROM_HOME
+}
+
+enum ReceiptStatus {
+  DRAFT
+  ISSUED
+  VOID
+}
+
 // MODELS
 
 // Organization - Multi-tenancy base
@@ -136,6 +151,8 @@ model Organization {
   communications Communication[]
   documents      Document[]
   auditLogs      AuditLog[]
+  attendance     Attendance[]
+  moneyReceipts  MoneyReceipt[]
 }
 
 // Users and Authentication
@@ -155,13 +172,15 @@ model User {
   updatedAt      DateTime  @updatedAt
 
   // Relations
-  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  leadsAssigned     Lead[]       @relation("AssignedConsultant")
-  leadsCreated      Lead[]       @relation("CreatedBy")
-  quotationsCreated Quotation[]  @relation("CreatedBy")
-  bookingsAssigned  Booking[]    @relation("OperationsManager")
-  tasksAssigned     Task[]       @relation("AssignedUser")
-  activitiesLogged  Activity[]   @relation("CreatedBy")
+  organization      Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  leadsAssigned     Lead[]         @relation("AssignedConsultant")
+  leadsCreated      Lead[]         @relation("CreatedBy")
+  quotationsCreated Quotation[]    @relation("CreatedBy")
+  bookingsAssigned  Booking[]      @relation("OperationsManager")
+  tasksAssigned     Task[]         @relation("AssignedUser")
+  activitiesLogged  Activity[]     @relation("CreatedBy")
+  attendance        Attendance[]
+  moneyReceipts     MoneyReceipt[] @relation("ReceiptCreatedBy")
 
   @@index([organizationId])
   @@index([email])
@@ -191,6 +210,7 @@ model Customer {
   quotations     Quotation[]
   itineraries    Itinerary[]
   bookings       Booking[]
+  moneyReceipts  MoneyReceipt[]
   invoices       Invoice[]
   communications Communication[]
   documents      Document[]
@@ -590,11 +610,13 @@ model Invoice {
   updatedAt DateTime @updatedAt
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  booking      Booking?     @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  customer     Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  payments     Payment[]
-  activities   Activity[]
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking       Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  customer      Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  payments      Payment[]
+  items         InvoiceItem[]
+  moneyReceipts MoneyReceipt[]
+  activities    Activity[]
 
   @@index([organizationId])
   @@index([bookingId])
@@ -621,6 +643,67 @@ model Payment {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  amount      Float
+  createdAt   DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model MoneyReceipt {
+  id             String        @id @default(uuid())
+  organizationId String
+  customerId     String?
+  invoiceId      String?
+  createdById    String
+  receiptNumber  String        @unique
+  receiptDate    DateTime      @default(now())
+  currency       CurrencyCode
+  amount         Float
+  method         String
+  reference      String?
+  notes          String?
+  status         ReceiptStatus @default(ISSUED)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer     Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  invoice      Invoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  createdBy    User         @relation("ReceiptCreatedBy", fields: [createdById], references: [id])
+
+  @@index([organizationId])
+  @@index([customerId])
+  @@index([invoiceId])
+  @@index([receiptDate])
+}
+
+model Attendance {
+  id             String           @id @default(uuid())
+  organizationId String
+  userId         String
+  attendanceDate DateTime
+  status         AttendanceStatus @default(PRESENT)
+  checkIn        DateTime?
+  checkOut       DateTime?
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, attendanceDate])
+  @@index([organizationId, attendanceDate])
 }
 
 // Tasks

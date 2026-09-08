@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { label: 'Bookings', href: '/dashboard/bookings', icon: '📅' },
   { label: 'Suppliers', href: '/dashboard/suppliers', icon: '🏢' },
   { label: 'Finance', href: '/dashboard/finance', icon: '💰' },
+  { label: 'Attendance', href: '/dashboard/attendance', icon: '🕘' },
   { label: 'Calendar', href: '/dashboard/calendar', icon: '📆' },
   { label: 'Reports', href: '/dashboard/reports', icon: '📊' },
 ];
