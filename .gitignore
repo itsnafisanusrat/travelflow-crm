@@ -49,6 +49,7 @@ prisma/migrations
 .idea/
 *.swp
 *.swo
+*.tsbuildinfo
 
 # OS
 Thumbs.db
