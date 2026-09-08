@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,10 +54,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-100 mb-4">
-            <span className="text-2xl font-bold text-brand-600">✈</span>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">TravelFlow CRM</h1>
+          <BrandLogo className="mx-auto max-w-[360px]" />
           <p className="text-slate-600">From first enquiry to unforgettable journey</p>
         </div>
 

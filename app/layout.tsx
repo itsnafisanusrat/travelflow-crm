@@ -6,6 +6,9 @@ import '@/styles/globals.css';
 export const metadata: Metadata = {
   title: 'TravelFlow CRM - From first enquiry to unforgettable journey',
   description: 'Professional CRM for travel agencies and tour operators',
+  icons: {
+    icon: '/travelflow-logo.svg',
+  },
   viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
 };
 

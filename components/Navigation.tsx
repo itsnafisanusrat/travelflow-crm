@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { classNames } from '@/lib/utils/common';
+import { BrandLogo } from '@/components/BrandLogo';
 
 interface NavItem {
   label: string;
@@ -14,13 +15,11 @@ interface NavItem {
 
 interface SidebarProps {
   items: NavItem[];
-  logo?: string;
   className?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   items,
-  logo = '✈',
   className = '',
 }) => {
   return (
@@ -28,13 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Logo */}
       <div className="px-6 py-4 border-b border-slate-200">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center text-xl">
-            {logo}
-          </div>
-          <div>
-            <h1 className="font-bold text-slate-900">TravelFlow</h1>
-            <p className="text-xs text-slate-500">CRM</p>
-          </div>
+          <BrandLogo compact className="max-w-[168px]" />
         </Link>
       </div>
 

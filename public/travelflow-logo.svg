@@ -1,0 +1,12 @@
+<svg width="720" height="220" viewBox="0 0 720 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="220" rx="20" fill="#FFFEFB"/>
+  <path d="M113 52C82 52 58 77 58 108C58 139 82 164 113 164H164C181 164 194 151 194 134C194 127 192 120 188 114" stroke="#12345B" stroke-width="16" stroke-linecap="round"/>
+  <path d="M113 164C82 164 58 139 58 108C58 77 82 52 113 52H151" stroke="#159B98" stroke-width="16" stroke-linecap="round"/>
+  <path d="M94 105C94 94 102 86 113 86C124 86 132 94 132 105C132 120 113 137 113 137C113 137 94 120 94 105Z" fill="#19B5A6"/>
+  <circle cx="113" cy="105" r="8" fill="#FFFEFB"/>
+  <path d="M132 82L207 49L155 104L132 82Z" fill="#18B6A7"/>
+  <path d="M132 82L155 104L147 132L132 82Z" fill="#12345B"/>
+  <path d="M155 104L207 49L172 111L155 104Z" fill="#087B91"/>
+  <text x="230" y="119" fill="#12345B" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="400" letter-spacing="-2">TravelFlow</text>
+  <text x="236" y="153" fill="#5C5C5C" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="8">CRM FOR TRAVEL AGENCIES</text>
+</svg>
