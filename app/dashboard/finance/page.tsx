@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { Input, Select } from '@/components/Input';
 import { StatusBadge } from '@/components/Badge';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
+import Link from 'next/link';
 
 const initialInvoices = [
   { number: 'INV-2026-0041', customer: 'John Smith', trip: 'Tokyo Explorer', total: 8100, paid: 4000, due: '2026-09-18', status: 'PARTIALLY_PAID' },
@@ -47,7 +48,7 @@ export default function FinancePage() {
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setShowReceiptForm((open) => !open)}>+ Money receipt</Button>
-          <Button variant="primary">+ Create invoice</Button>
+          <Link href="/dashboard/quotations/new" className="btn-primary">+ Create invoice</Link>
         </div>
       </div>
 

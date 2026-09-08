@@ -56,12 +56,12 @@ export default function DashboardPage() {
           <p className="text-slate-600 mt-1">Welcome back! Here's what's happening today.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="md">
+          <Link href="/dashboard/reports" className="btn-secondary">
             📊 Export
-          </Button>
-          <Button variant="primary" size="md">
+          </Link>
+          <Link href="/dashboard/leads" className="btn-primary">
             + New Lead
-          </Button>
+          </Link>
         </div>
       </div>
 

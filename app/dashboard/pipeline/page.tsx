@@ -7,6 +7,7 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import { formatCurrency } from '@/lib/utils/format';
+import Link from 'next/link';
 
 const stages = [
   { id: 'NEW', label: 'New enquiry', color: 'border-slate-300' },
@@ -37,7 +38,7 @@ export default function PipelinePage() {
     <div className="p-6 max-w-[1600px] mx-auto space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div><h1 className="text-3xl font-bold text-slate-900">Sales Pipeline</h1><p className="text-slate-600 mt-1">Move every enquiry from first contact to confirmed journey.</p></div>
-        <Button variant="primary">+ New opportunity</Button>
+        <Link href="/dashboard/leads/new" className="btn-primary">+ New opportunity</Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card><p className="text-sm text-slate-600">Pipeline value</p><p className="text-2xl font-bold mt-2">{formatCurrency(opportunities.reduce((sum, item) => sum + item.value, 0))}</p></Card>

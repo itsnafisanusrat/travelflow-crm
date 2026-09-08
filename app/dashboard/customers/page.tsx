@@ -5,6 +5,7 @@
 import { Card, CardHeader, CardContent } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import Link from 'next/link';
 
 const customers = [
   { id: 1, name: 'John Smith', email: 'john@example.com', city: 'New York', trips: 3 },
@@ -20,7 +21,7 @@ export default function CustomersPage() {
           <h1 className="text-3xl font-bold text-slate-900">Customers</h1>
           <p className="text-slate-600 mt-1">Manage customer profiles and relationships</p>
         </div>
-        <Button variant="primary">+ New Customer</Button>
+        <Link href="/dashboard/leads/new" className="btn-primary">+ New Customer</Link>
       </div>
 
       <Card>

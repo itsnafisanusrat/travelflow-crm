@@ -118,9 +118,9 @@ export default function LeadsPage() {
           <h1 className="text-3xl font-bold text-slate-900">Leads & Enquiries</h1>
           <p className="text-slate-600 mt-1">Manage and track your travel enquiries</p>
         </div>
-        <Button variant="primary" size="md">
+        <Link href="/dashboard/leads/new" className="btn-primary">
           + New Lead
-        </Button>
+        </Link>
       </div>
 
       {/* Filters */}

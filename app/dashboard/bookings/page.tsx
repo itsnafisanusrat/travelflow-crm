@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Input, Select } from '@/components/Input';
 import { StatusBadge } from '@/components/Badge';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
+import Link from 'next/link';
 
 const bookings = [
   {
@@ -53,9 +54,9 @@ export default function BookingsPage() {
           <h1 className="text-3xl font-bold text-slate-900">Bookings</h1>
           <p className="text-slate-600 mt-1">Manage confirmed trips and operations</p>
         </div>
-        <Button variant="primary" size="md">
+        <Link href="/dashboard/quotations/new" className="btn-primary">
           + New Booking
-        </Button>
+        </Link>
       </div>
 
       {/* Filters */}

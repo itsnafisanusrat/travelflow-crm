@@ -100,7 +100,7 @@ export default function LoginPage() {
                 />
                 <span className="text-slate-700">Remember me</span>
               </label>
-              <Link href="#" className="text-brand-600 hover:text-brand-700 font-medium">
+              <Link href="/forgot-password" className="text-brand-600 hover:text-brand-700 font-medium">
                 Forgot password?
               </Link>
             </div>
